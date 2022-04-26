@@ -37,9 +37,9 @@ def send_message(bot, message):
             text=message
         )
         logger.info(f'Бот отправил сообщение: {message}')
-    except telegram.error.TelegramError:
+    except Exception:
         error = 'Ошибка отправки сообщения в Telegram-чат!'
-        raise Exception(error)
+        raise telegram.error.TelegramError(error)
 
 
 def get_api_answer(current_timestamp):
@@ -49,9 +49,9 @@ def get_api_answer(current_timestamp):
     params = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    except ConnectionError:
+    except Exception:
         error = 'Проблемы с подключением к серверу'
-        raise Exception(error)
+        raise ConnectionError(error)
     if response.status_code != HTTPStatus.OK:
         error = (
             f'Эндпоинт {ENDPOINT} недоступен. '
@@ -67,10 +67,10 @@ def check_response(response):
     if not isinstance(response, dict):
         error = 'Некорректный ответ от API - ожидался словарь'
         raise TypeError(error)
-    if 'homeworks' not in response:
+    if ('homeworks' not in response) or ('current_date' not in response):
         error = (
             'Некорректный ответ от API - '
-            'в словаре отсутствует ключ "homeworks"'
+            'в словаре отсутствует необходимый ключ'
         )
         raise KeyError(error)
     homeworks = response.get('homeworks')
@@ -78,19 +78,6 @@ def check_response(response):
         error = (
             'Некорректный ответ от API - '
             '"homeworks" должен иметь тип list'
-        )
-        raise TypeError(error)
-    if 'current_date' not in response:
-        error = (
-            'Некорректный ответ от API - '
-            'в словаре отсутствует ключ "current_date"'
-        )
-        raise KeyError(error)
-    current_date = response.get('current_date')
-    if not (isinstance(current_date, int) and current_date > 0):
-        error = (
-            'Некорректный ответ от API - '
-            '"current_date" должен быть положительным целым числом'
         )
         raise TypeError(error)
     return homeworks
@@ -129,14 +116,6 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-    logger.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(stream=sys.stdout)
-    logger.addHandler(handler)
-    formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] -function %(funcName)s- '
-        '-line %(lineno)d- %(message)s'
-    )
-    handler.setFormatter(formatter)
     if check_tokens():
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
     else:
@@ -167,4 +146,12 @@ def main():
 
 
 if __name__ == '__main__':
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    logger.addHandler(handler)
+    formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] -function %(funcName)s- '
+        '-line %(lineno)d- %(message)s'
+    )
+    handler.setFormatter(formatter)
     main()
