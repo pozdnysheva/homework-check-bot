@@ -1,2 +1,2 @@
-# homework_bot
-python telegram bot
+### Технологии:
+- Python 3.7
