@@ -2,3 +2,4 @@
 
 ### Технологии:
 - Python 3.7
+- Библиотека python-telegram-bot
